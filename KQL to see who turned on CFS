@@ -1,0 +1,24 @@
+Copilot for Security went GA on April 1 which means anyone with Contributor or Owner permissions can provision capacity. 
+I’m going to show you how to create an alert in Sentinel so that you will be notified when that happens.
+
+The first requirement of this (besides having Sentinel) is that you are logging Azure Activity. 
+
+If you’re ready, let’s move into the Logs in Sentinel. Paste the code below into the scripting pane and press the blue Run button.
+
+AzureActivity 
+| where TimeGenerated >= ago(1d) 
+| where ResourceProviderValue == "MICROSOFT.SECURITYCOPILOT" 
+| extend resourceName = tostring(parse_json(Properties).resource) 
+| extend resourceGroupName = tostring(parse_json(Properties).resourceGroup) 
+| extend resourceActivity = tostring(parse_json(Properties).message) 
+| project Caller, resourceName, resourceGroupName, resourceActivity, TimeGenerated
+
+Hopefully, you don’t see anything here (unless you did enable Copilot for Security). From here, we can promote this query to an alert. You can change the TimeGenerated if you want to look back further than one day.
+
+Select the +New alert rule icon. In this case, you could create this either as an Azure Monitor alert or a Microsoft Sentinel alert. I’m going to create a Microsoft Sentinel alert.
+
+You’ll give it a Name, fill out the Description, decide the Severity and add Mitre ATT&CK info if you wish. Click the Next button.
+
+On the Set rule logic page, Scroll down to the Query scheduling section. I’m setting mine to Run query every 1 Days and Lookup data from the last 1 Days.
+
+Next your way to the end and save the rule. Going forward you should get an alert whenever someone provisions or deprovisions Copilot for Security.
